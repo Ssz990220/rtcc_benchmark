@@ -1,4 +1,5 @@
 #include <vector>
+#include <ros/package.h>
 #include <moveit_visual_tools/moveit_visual_tools.h>
 #include <moveit/robot_model/robot_model.h>
 #include <moveit/robot_state/robot_state.h>
@@ -16,16 +17,20 @@
 
 #include <array>
 
-auto g_planning_scene = std::unique_ptr<planning_scene::PlanningScene>();
+// auto g_planning_scene = std::unique_ptr<planning_scene::PlanningScene>();
 
 // Temp
-auto g_marker_array_publisher = std::unique_ptr<ros::Publisher>();
+// auto g_marker_array_publisher = std::unique_ptr<ros::Publisher>();
 auto g_col_marker_publisher = std::unique_ptr<ros::Publisher>();
+auto g_mesh_marker_publisher = std::unique_ptr<ros::Publisher>();
 shapes::ShapePtr g_world_cube_shape;
-visualization_msgs::MarkerArray g_collision_points;
+// visualization_msgs::MarkerArray g_collision_points;
 visualization_msgs::MarkerArray g_collision_objs;
+visualization_msgs::Marker g_mesh;
 static int colObjCount = 0;
 const double BOX_SIZE = 0.1;
+
+collision_detection::CollisionRequest c_req;
 
 // void publishMarkers(visualization_msgs::MarkerArray &markers)
 // {
@@ -107,6 +112,34 @@ const double BOX_SIZE = 0.1;
 // }
 // TODO: Remove Temp
 
+void add_mesh(std::shared_ptr<planning_scene::PlanningScene> &planning_scene, std::string path, std::string name, Eigen::Isometry3d &pose)
+{
+  shapes::ShapePtr mesh = shapes::createMeshFromResource(path);
+  planning_scene->getWorldNonConst()->addToObject(name, mesh, pose);
+
+  g_mesh.header.frame_id = "base";
+  g_mesh.header.stamp = ros::Time::now();
+  g_mesh.ns = "mesh_objects";
+  g_mesh.type = visualization_msgs::Marker::MESH_RESOURCE;
+  g_mesh.action = visualization_msgs::Marker::ADD;
+  g_mesh.pose.position.x = pose.translation().x();
+  g_mesh.pose.position.y = pose.translation().y();
+  g_mesh.pose.position.z = pose.translation().z();
+  g_mesh.pose.orientation.x = pose.rotation().x();
+  g_mesh.pose.orientation.y = pose.rotation().y();
+  g_mesh.pose.orientation.z = pose.rotation().z();
+  g_mesh.pose.orientation.w = pose.rotation().w();
+  g_mesh.scale.x = 1;
+  g_mesh.scale.y = 1;
+  g_mesh.scale.z = 1;
+  g_mesh.color.a = 0.8; // Don't forget to set the alpha!
+  g_mesh.color.r = 0.0;
+  g_mesh.color.g = 1.0;
+  g_mesh.color.b = 0.0;
+  g_mesh.lifetime = ros::Duration();
+  g_mesh.mesh_resource = path;
+}
+
 void add_cube(std::shared_ptr<planning_scene::PlanningScene> &planning_scene, std::array<double, 6> &cubeInfo, std::string name)
 {
 
@@ -175,6 +208,56 @@ void setCollisionScene(std::shared_ptr<planning_scene::PlanningScene> &planning_
   // add_cube(cubeInfo13, "wall4");
 
   g_col_marker_publisher->publish(g_collision_objs);
+  g_mesh_marker_publisher->publish(g_mesh);
+}
+
+void validState(std::shared_ptr<planning_scene::PlanningScene> &planning_scene, const std::array<double, 6> &jointValues, moveit::core::RobotState &state)
+{
+  state.setJointPositions("jaka_joint_1", &jointValues[0]);
+  state.setJointPositions("jaka_joint_2", &jointValues[1]);
+  state.setJointPositions("jaka_joint_3", &jointValues[2]);
+  state.setJointPositions("jaka_joint_4", &jointValues[3]);
+  state.setJointPositions("jaka_joint_5", &jointValues[4]);
+  state.setJointPositions("jaka_joint_6", &jointValues[5]);
+  state.update();
+
+  // moveit_msgs::DisplayRobotState msg;
+  // robot_state::robotStateToRobotStateMsg(state, msg.state);
+  // visual_tools.publishRobotState(state);
+  collision_detection::CollisionResult c_res;
+
+  planning_scene->checkCollision(c_req, c_res, state);
+
+  if (c_res.collision)
+  {
+    ROS_INFO_STREAM("In Collision");
+  }
+}
+
+void validState(std::shared_ptr<planning_scene::PlanningScene> &planning_scene, moveit::core::RobotState &state)
+{
+  // moveit_msgs::DisplayRobotState msg;
+  // robot_state::robotStateToRobotStateMsg(state, msg.state);
+  // visual_tools.publishRobotState(state);
+  collision_detection::CollisionResult c_res;
+
+  planning_scene->checkCollision(c_req, c_res, state);
+
+  if (c_res.collision)
+  {
+    ROS_INFO_STREAM("In Collision");
+  }
+}
+
+static void poseToState(const std::array<double, 6> &pose, moveit::core::RobotState &state)
+{
+  state.setJointPositions("jaka_joint_1", &pose[0]);
+  state.setJointPositions("jaka_joint_2", &pose[1]);
+  state.setJointPositions("jaka_joint_3", &pose[2]);
+  state.setJointPositions("jaka_joint_4", &pose[3]);
+  state.setJointPositions("jaka_joint_5", &pose[4]);
+  state.setJointPositions("jaka_joint_6", &pose[5]);
+  state.update();
 }
 
 int main(int argc, char **argv)
@@ -211,6 +294,9 @@ int main(int argc, char **argv)
   g_col_marker_publisher = std::make_unique<ros::Publisher>(
       node_handle.advertise<visualization_msgs::MarkerArray>("col_scene_marray", 100));
 
+  g_mesh_marker_publisher = std::make_unique<ros::Publisher>(
+      node_handle.advertise<visualization_msgs::Marker>("mesh_marker", 100));
+
   visual_tools.prompt(
       "Press 'next' in the RvizVisualToolsGui window to start the continuous collision detection demo.");
   ROS_INFO("Shutting down the interactive interactive_robot...");
@@ -220,23 +306,117 @@ int main(int argc, char **argv)
   moveit::core::RobotState state = planning_scene->getCurrentStateNonConst();
   state.setToDefaultValues();
 
-  double joint1 = 1.7;
-  double joint2 = 1.024;
-  double joint3 = 1.8224;
-  double joint4 = 1.8918;
-  double joint5 = -1.57;
-  double joint6 = 0.7116;
-  state.setJointPositions("jaka_joint_1", &joint1);
-  state.setJointPositions("jaka_joint_2", &joint2);
-  state.setJointPositions("jaka_joint_3", &joint3);
-  state.setJointPositions("jaka_joint_4", &joint4);
-  state.setJointPositions("jaka_joint_5", &joint5);
-  state.setJointPositions("jaka_joint_6", &joint6);
-  state.update();
+  c_req.group_name = "arm";
+  std::array<double, 6> q = {1.7, 1.024, 1.8224, 1.8918, -1.57, 0.7116};
+  validState(planning_scene, q, state);
 
-  moveit_msgs::DisplayRobotState msg;
-  robot_state::robotStateToRobotStateMsg(state, msg.state);
-  visual_tools.publishRobotState(state);
+  // Read poses from bin file as vector of arrays
+  std::string path = ros::package::getPath("rtcc_benchmark");
+  std::string dataDir = path + "/data/";
+
+  std::vector<std::array<double, 6>> poses;
+  std::ifstream file(dataDir + "poses.bin", std::ios::binary);
+  if (file.is_open())
+  {
+    while (true)
+    {
+      std::array<float, 6> posef;
+      std::array<double, 6> pose;
+      file.read(reinterpret_cast<char *>(posef.data()), sizeof(float) * 6);
+      if (file.eof())
+      {
+        break;
+      }
+
+      std::transform(posef.begin(), posef.end(), pose.begin(),
+                     [](float f)
+                     { return static_cast<double>(f); });
+      poses.push_back(pose);
+    }
+  }
+  file.close();
+
+  ROS_INFO_STREAM("Loaded " << poses.size() << " Poses from file");
+
+  visual_tools.prompt(
+      "Press 'next' in the RvizVisualToolsGui window to start the benchmark on static poses validation...");
+
+  std::vector<moveit::core::RobotState> states;
+  states.reserve(poses.size()); // Reserve space to avoid reallocations
+
+  // Define the lambda function outside std::transform
+  auto poseToRobotState = [&planning_scene](const std::array<double, 6> &pose) -> moveit::core::RobotState
+  {
+    moveit::core::RobotState state = planning_scene->getCurrentStateNonConst();
+    poseToState(pose, state);
+    return state;
+  };
+
+  std::transform(poses.begin(), poses.end(), std::back_inserter(states), poseToRobotState);
+
+  // Time the collision detection
+  auto start = std::chrono::high_resolution_clock::now();
+  for (auto const &state : states)
+  {
+    collision_detection::CollisionResult c_res;
+    planning_scene->checkCollision(c_req, c_res, state);
+  }
+
+  auto end = std::chrono::high_resolution_clock::now();
+  std::chrono::duration<double, std::milli> elapsed = end - start;
+  std::cout << "Time for static poses collision detection: " << elapsed.count() << " ms" << std::endl;
+
+  visual_tools.prompt(
+      "Press 'next' in the RvizVisualToolsGui window to start the benchmark on trajectory validation...");
+
+  std::vector<std::array<double, 6>> trajPoses;
+  file.open(dataDir + "trajPoses.bin", std::ios::binary);
+  if (file.is_open())
+  {
+    while (true)
+    {
+      std::array<float, 6> posef;
+      std::array<double, 6> pose;
+      file.read(reinterpret_cast<char *>(pose.data()), sizeof(float) * 6);
+      if (file.eof())
+      {
+        break;
+      }
+      std::transform(posef.begin(), posef.end(), pose.begin(),
+                     [](float f)
+                     { return static_cast<double>(f); });
+      trajPoses.push_back(pose);
+    }
+  }
+  file.close();
+  std::vector<std::pair<moveit::core::RobotState, moveit::core::RobotState>>
+      statePairs;
+
+  size_t trajSize = trajPoses.size() / 2;
+  ROS_INFO_STREAM("Load " << trajSize << " Trajectory from file");
+  statePairs.reserve(trajSize); // Reserve space to avoid reallocations
+
+  for (int i = 0; i < trajSize; i++)
+  {
+    moveit::core::RobotState startState = poseToRobotState(trajPoses[i]);
+    moveit::core::RobotState endState = poseToRobotState(trajPoses[i + trajSize]);
+    statePairs.emplace_back(std::make_pair(std::move(startState), std::move(endState)));
+  }
+
+  // Time the continuous collision detection
+  start = std::chrono::high_resolution_clock::now();
+  for (auto &statePair : statePairs)
+  {
+    collision_detection::CollisionResult c_res;
+    planning_scene->getCollisionEnv()->checkRobotCollision(c_req, c_res, statePair.first, statePair.second);
+  }
+  end = std::chrono::high_resolution_clock::now();
+  elapsed = end - start;
+  std::cout << "Time for trajectory collision detection: " << elapsed.count() << " ms" << std::endl;
+
+  // moveit_msgs::DisplayRobotState msg;
+  // robot_state::robotStateToRobotStateMsg(state, msg.state);
+  // visual_tools.publishRobotState(state);
 
   // {
   //   // BEGIN_TUTORIAL
