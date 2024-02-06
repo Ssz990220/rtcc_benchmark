@@ -4,12 +4,11 @@ Panels:
     Name: Displays
     Property Tree Widget:
       Expanded:
-        - /MarkerArray1
-        - /RobotState1
         - /RobotState1/Links1
         - /RobotState1/Links1/jaka_link_01
         - /InteractiveMarkers1
         - /MarkerArray2
+        - /Marker2
       Splitter Ratio: 0.5
     Tree Height: 789
   - Class: rviz/Help
@@ -142,6 +141,14 @@ Visualization Manager:
         collision_objects7: true
       Queue Size: 100
       Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /mesh_marker
+      Name: Marker
+      Namespaces:
+        {}
+      Queue Size: 100
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -192,5 +199,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1920
-  X: 506
-  Y: 46
+  X: 474
+  Y: 14

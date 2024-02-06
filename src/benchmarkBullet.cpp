@@ -114,7 +114,7 @@ collision_detection::CollisionRequest c_req;
 
 void add_mesh(std::shared_ptr<planning_scene::PlanningScene> &planning_scene, std::string path, std::string name, Eigen::Isometry3d &pose)
 {
-  shapes::ShapePtr mesh = shapes::createMeshFromResource(path);
+  auto mesh = std::shared_ptr<shapes::Mesh>(shapes::createMeshFromResource(path));
   planning_scene->getWorldNonConst()->addToObject(name, mesh, pose);
 
   g_mesh.header.frame_id = "base";
@@ -125,10 +125,11 @@ void add_mesh(std::shared_ptr<planning_scene::PlanningScene> &planning_scene, st
   g_mesh.pose.position.x = pose.translation().x();
   g_mesh.pose.position.y = pose.translation().y();
   g_mesh.pose.position.z = pose.translation().z();
-  g_mesh.pose.orientation.x = pose.rotation().x();
-  g_mesh.pose.orientation.y = pose.rotation().y();
-  g_mesh.pose.orientation.z = pose.rotation().z();
-  g_mesh.pose.orientation.w = pose.rotation().w();
+  Eigen::Quaterniond quat(pose.rotation());
+  g_mesh.pose.orientation.x = quat.x();
+  g_mesh.pose.orientation.y = quat.y();
+  g_mesh.pose.orientation.z = quat.z();
+  g_mesh.pose.orientation.w = quat.w();
   g_mesh.scale.x = 1;
   g_mesh.scale.y = 1;
   g_mesh.scale.z = 1;
@@ -206,6 +207,21 @@ void setCollisionScene(std::shared_ptr<planning_scene::PlanningScene> &planning_
   // add_cube(cubeInfo12, "wall3");
   // std::array<double, 6> cubeInfo13 = {3,0.1,2.5, -0.75,-1.9,0.5};
   // add_cube(cubeInfo13, "wall4");
+
+  std::string meshPath = "file://" + ros::package::getPath("scene_102") + "/models/PipeLong.STL";
+  Eigen::Isometry3d meshPose = Eigen::Isometry3d::Identity();
+
+  constexpr double x = 0.35355339059327384;
+  constexpr double y = 0.6123724356957945;
+  constexpr double z = 0.6123724356957945;
+  constexpr double w = 0.35355339059327384;
+  Eigen::Quaterniond quat(w, x, y, z); // w is the scalar part, and x, y, z are the vector part of the quaternion
+
+  // Set the translation part
+  meshPose.translation() << -0.23, -0.37, 0.35;
+  meshPose.rotate(quat);
+
+  add_mesh(planning_scene, meshPath, "pipe", meshPose);
 
   g_col_marker_publisher->publish(g_collision_objs);
   g_mesh_marker_publisher->publish(g_mesh);
