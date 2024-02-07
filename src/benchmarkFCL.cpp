@@ -104,9 +104,20 @@ int main(int argc, char **argv)
     std::vector<std::pair<moveit::core::RobotState, moveit::core::RobotState>> statePairs;
 
     loadPoses(states, statePairs, *robot_state_);
+    std::cout << "Load " << states.size() << " poses from file" << std::endl;
 
+    std::cout << "Found " << cenv_->getWorld()->getObjectIds().size() << " objects in the planning scene" << std::endl;
+    auto world = cenv_->getWorld()->getObjectIds();
+    for (auto it = world.begin(); it != world.end(); it++)
+    {
+        std::cout << "Object " << *it << std::endl;
+        auto shape = cenv_->getWorld()->getObject(*it)->shapes_.front();
+        std::cout << "Shape " << shape->type << std::endl;
+        shape->print(std::cout);
+    }
     // Start Collision Detection
     collision_detection::CollisionRequest req;
+    req.group_name = "arm";
     collision_detection::CollisionResult res;
     // Static Poses First
     auto start = std::chrono::high_resolution_clock::now();
