@@ -11,15 +11,15 @@
 
 
   <!-- Run Rviz and load the default config to see the state of the move_group node -->
-  <!-- <node name="$(anon rviz)" pkg="rviz" type="rviz" respawn="false" args="-d $(find rtcc_benchmark)/launch/moveit.rviz" output="screen">
+  <node name="$(anon rviz)" pkg="rviz" type="rviz" respawn="false" args="-d $(find rtcc_benchmark)/launch/moveit.rviz" output="screen">
     <rosparam command="load" file="$(find jaka_moveit_config)/config/kinematics.yaml" subst_value="true"/>
-  </node> -->
+  </node>
 
 
   <node pkg="tf2_ros" type="static_transform_publisher" name="virtual_joint_broadcaster_0" args="0 0 0 0 0 0 World base" />
 
   <!-- launch interactivity_tutorial -->
-  <node name="benchmarkBullet" pkg="rtcc_benchmark" type="bullet_benchmark_node" respawn="false" output="screen">
+  <node name="benchmarkBulletViz" pkg="rtcc_benchmark" type="bullet_benchmark_viz_node" respawn="false" output="screen">
     <rosparam command="load" file="$(find jaka_moveit_config)/config/kinematics.yaml" subst_value="true"/>
   </node>
 

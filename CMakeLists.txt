@@ -38,8 +38,8 @@ include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-add_executable(bullet_benchmark_node src/benchmarkBullet.cpp src/imarker.cpp src/interactive_robot.cpp src/pose_string.cpp)
-target_link_libraries(bullet_benchmark_node
+add_executable(bullet_benchmark_viz_node src/benchmarkBulletViz.cpp src/imarker.cpp src/interactive_robot.cpp src/pose_string.cpp)
+target_link_libraries(bullet_benchmark_viz_node
   ${catkin_LIBRARIES}
 )
 
@@ -48,8 +48,14 @@ target_link_libraries(fcl_benchmark_node
   ${catkin_LIBRARIES}
 )
 
+add_executable(bullet_benchmark_node src/benchmarkBullet.cpp)
+target_link_libraries(bullet_benchmark_node
+  ${catkin_LIBRARIES}
+)
+
 
 install(TARGETS 
+  bullet_benchmark_viz_node
   bullet_benchmark_node
   fcl_benchmark_node
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
