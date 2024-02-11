@@ -12,11 +12,11 @@
 // auto g_planning_scene = std::unique_ptr<planning_scene::PlanningScene>();
 
 // Temp
-// auto g_marker_array_publisher = std::unique_ptr<ros::Publisher>();
+auto g_marker_array_publisher = std::unique_ptr<ros::Publisher>();
 auto g_col_marker_publisher = std::unique_ptr<ros::Publisher>();
 auto g_mesh_marker_publisher = std::unique_ptr<ros::Publisher>();
 shapes::ShapePtr g_world_cube_shape;
-// visualization_msgs::MarkerArray g_collision_points;
+visualization_msgs::MarkerArray g_collision_points;
 visualization_msgs::MarkerArray g_collision_objs;
 visualization_msgs::Marker g_mesh;
 static int colObjCount = 0;
@@ -24,84 +24,82 @@ const double BOX_SIZE = 0.1;
 
 collision_detection::CollisionRequest c_req;
 
-// void publishMarkers(visualization_msgs::MarkerArray &markers)
-// {
-//   // delete old markers
-//   if (!g_collision_points.markers.empty())
-//   {
-//     for (auto &marker : g_collision_points.markers)
-//       marker.action = visualization_msgs::Marker::DELETE;
+void publishMarkers(visualization_msgs::MarkerArray &markers)
+{
+  // delete old markers
+  if (!g_collision_points.markers.empty())
+  {
+    for (auto &marker : g_collision_points.markers)
+      marker.action = visualization_msgs::Marker::DELETE;
 
-//     g_marker_array_publisher->publish(g_collision_points);
-//   }
+    g_marker_array_publisher->publish(g_collision_points);
+  }
 
-//   // move new markers into g_collision_points
-//   std::swap(g_collision_points.markers, markers.markers);
+  // move new markers into g_collision_points
+  std::swap(g_collision_points.markers, markers.markers);
 
-//   // draw new markers (if there are any)
-//   if (!g_collision_points.markers.empty())
-//     g_marker_array_publisher->publish(g_collision_points);
-// }
+  // draw new markers (if there are any)
+  if (!g_collision_points.markers.empty())
+    g_marker_array_publisher->publish(g_collision_points);
+}
 
-// void computeCollisionContactPoints(InteractiveRobot &robot)
-// {
-//   collision_detection::CollisionRequest c_req;
-//   collision_detection::CollisionResult c_res;
-//   c_req.group_name = robot.getGroupName();
-//   ROS_INFO_STREAM("Group name: " << c_req.group_name);
-//   c_req.contacts = true;
-//   c_req.max_contacts = 100;
-//   c_req.max_contacts_per_pair = 5;
-//   c_req.verbose = false;
+void computeCollisionContactPoints(std::shared_ptr<planning_scene::PlanningScene> &planning_scene, moveit::core::RobotState &state)
+{
+  collision_detection::CollisionRequest c_req;
+  collision_detection::CollisionResult c_res;
+  // c_req.group_name = robot.getGroupName();
+  // ROS_INFO_STREAM("Group name: " << c_req.group_name);
+  c_req.contacts = true;
+  c_req.max_contacts = 100;
+  c_req.max_contacts_per_pair = 5;
+  c_req.verbose = false;
 
-//   ROS_INFO_STREAM("Find " << g_planning_scene->getCollisionEnv()->getWorld()->getObjectIds().size() << " objects in the world");
-//   auto world = g_planning_scene->getWorld()->getObjectIds();
-//   for (auto it = world.begin(); it != world.end(); it++)
-//   {
-//     ROS_INFO_STREAM("Object " << *it);
-//     auto shape = g_planning_scene->getWorld()->getObject(*it)->shapes_.front();
-//     ROS_INFO_STREAM("Shape " << shape->type);
-//     shape->print(std::cout);
-//   }
+  // ROS_INFO_STREAM("Find " << g_planning_scene->getCollisionEnv()->getWorld()->getObjectIds().size() << " objects in the world");
+  // auto world = g_planning_scene->getWorld()->getObjectIds();
+  // for (auto it = world.begin(); it != world.end(); it++)
+  // {
+  //   ROS_INFO_STREAM("Object " << *it);
+  //   auto shape = g_planning_scene->getWorld()->getObject(*it)->shapes_.front();
+  //   ROS_INFO_STREAM("Shape " << shape->type);
+  //   shape->print(std::cout);
+  // }
 
-//   // auto robot_state = g_planning_scene->getCurrentStateNonConst();
-//   // for (int i = 0; i < 6; i++)
-//   // {
-//   //     ROS_INFO_STREAM("Joint " << i+1 << " is " << *robot_state.getJointPositions("jaka_joint_" + std::to_string(i + 1)));
-//   // }
+  // auto robot_state = g_planning_scene->getCurrentStateNonConst();
+  // for (int i = 0; i < 6; i++)
+  // {
+  //     ROS_INFO_STREAM("Joint " << i+1 << " is " << *robot_state.getJointPositions("jaka_joint_" + std::to_string(i + 1)));
+  // }
 
-//   g_planning_scene->checkCollision(c_req, c_res, *robot.robotState());
+  planning_scene->checkCollision(c_req, c_res, state);
 
-//   if (c_res.collision)
-//   {
-//     ROS_INFO_STREAM("COLLIDING contact_point_count=" << c_res.contact_count);
-//     if (c_res.contact_count > 0)
-//     {
-//       std_msgs::ColorRGBA color;
-//       color.r = 1.0;
-//       color.g = 0.0;
-//       color.b = 1.0;
-//       color.a = 0.5;
-//       visualization_msgs::MarkerArray markers;
+  if (c_res.collision)
+  {
+    ROS_INFO_STREAM("COLLIDING contact_point_count=" << c_res.contact_count);
+    if (c_res.contact_count > 0)
+    {
+      std_msgs::ColorRGBA color;
+      color.r = 1.0;
+      color.g = 0.0;
+      color.b = 1.0;
+      color.a = 0.5;
+      visualization_msgs::MarkerArray markers;
 
-//       /* Get the contact points and display them as markers */
-//       collision_detection::getCollisionMarkersFromContacts(markers, "base", c_res.contacts, color,
-//                                                            ros::Duration(), // remain until deleted
-//                                                            0.01);           // radius
-//       publishMarkers(markers);
-//     }
-//   }
-//   else
-//   {
-//     ROS_INFO("Not colliding");
+      /* Get the contact points and display them as markers */
+      collision_detection::getCollisionMarkersFromContacts(markers, "base", c_res.contacts, color,
+                                                           ros::Duration(), // remain until deleted
+                                                           0.01);           // radius
+      publishMarkers(markers);
+    }
+  }
+  else
+  {
+    ROS_INFO("Not colliding");
 
-//     // delete the old collision point markers
-//     visualization_msgs::MarkerArray empty_marker_array;
-//     publishMarkers(empty_marker_array);
-//   }
-
-//   g_marker_array_publisher->publish(g_collision_objs);
-// }
+    // delete the old collision point markers
+    visualization_msgs::MarkerArray empty_marker_array;
+    publishMarkers(empty_marker_array);
+  }
+}
 // TODO: Remove Temp
 
 void add_mesh(std::shared_ptr<planning_scene::PlanningScene> &planning_scene, std::string path, std::string name, Eigen::Isometry3d &pose)
@@ -200,7 +198,7 @@ void setCollisionScene(std::shared_ptr<planning_scene::PlanningScene> &planning_
   // std::array<double, 6> cubeInfo13 = {3,0.1,2.5, -0.75,-1.9,0.5};
   // add_cube(cubeInfo13, "wall4");
 
-  std::string meshPath = "file://" + ros::package::getPath("scene_102") + "/models/PipeLong.STL";
+  std::string meshPath = "file://" + ros::package::getPath("scene_102") + "/models/PipeLong.obj";
   Eigen::Isometry3d meshPose = Eigen::Isometry3d::Identity();
 
   constexpr double x = 0.35355339059327384;
@@ -218,6 +216,7 @@ void setCollisionScene(std::shared_ptr<planning_scene::PlanningScene> &planning_
   g_col_marker_publisher->publish(g_collision_objs);
   g_mesh_marker_publisher->publish(g_mesh);
 }
+
 
 void validState(std::shared_ptr<planning_scene::PlanningScene> &planning_scene, const std::array<double, 6> &jointValues, moveit::core::RobotState &state)
 {
@@ -259,27 +258,16 @@ void validState(std::shared_ptr<planning_scene::PlanningScene> &planning_scene, 
 
 int main(int argc, char **argv)
 {
-  ros::init(argc, argv, "benchmarkBulletVizViz");
+  ros::init(argc, argv, "benchmarkBulletViz");
   ros::NodeHandle node_handle;
 
   ros::AsyncSpinner spinner(1);
   spinner.start();
 
-  // robot_model_loader::RobotModelLoader rm_loader_("robot_description");
-  // moveit::core::RobotModelPtr robot_model_ = rm_loader_.getModel();
-  // if (!robot_model_)
-  // {
-  //     ROS_ERROR("Could not load robot description");
-  // }
-
-  // g_planning_scene = std::make_unique<planning_scene::PlanningScene>(robot_model_);
-  // g_planning_scene->setActiveCollisionDetector(collision_detection::CollisionDetectorAllocatorBullet::create(),
-  //                                              true /* exclusive */);
-
   robot_model_loader::RobotModelLoader rm_loader_("robot_description");
 
   robot_model::RobotModelPtr robot_model = rm_loader_.getModel();
-  ros::Publisher robot_state_publisher_(node_handle.advertise<moveit_msgs::DisplayRobotState>("benchmarkBulletVizViz/interactive_robot_state", 1));
+  ros::Publisher robot_state_publisher_(node_handle.advertise<moveit_msgs::DisplayRobotState>("benchmarkBulletViz/interactive_robot_state", 1));
   auto planning_scene = std::make_shared<planning_scene::PlanningScene>(robot_model);
   planning_scene->setActiveCollisionDetector(collision_detection::CollisionDetectorAllocatorBullet::create(),
                                              /* exclusive = */ true);
@@ -343,56 +331,33 @@ int main(int argc, char **argv)
   elapsed = end - start;
   std::cout << "Time for trajectory collision detection: " << elapsed.count() << " ms" << std::endl;
 
-  // moveit_msgs::DisplayRobotState msg;
-  // robot_state::robotStateToRobotStateMsg(state, msg.state);
-  // visual_tools.publishRobotState(state);
+  moveit_msgs::DisplayRobotState msg;
+  robot_state::robotStateToRobotStateMsg(state, msg.state);
+  visual_tools.publishRobotState(state);
 
-  // {
-  //   // BEGIN_TUTORIAL
-  //   // The code starts with creating an interactive robot and a new planning scene.
-  //   InteractiveRobot interactive_robot("robot_description", "benchmarkBulletViz/interactive_robot_state");
-  //   g_planning_scene = std::make_unique<planning_scene::PlanningScene>(interactive_robot.robotModel());
+  g_marker_array_publisher = std::make_unique<ros::Publisher>(
+      node_handle.advertise<visualization_msgs::MarkerArray>("interactive_robot_marray", 100));
 
-  //   // Changing the collision detector to Bullet
-  //   // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  //   // The active collision detector is set from the planning scene using the specific collision detector allocator for
-  //   // Bullet. The second argument indicates that Bullet will be the exclusive collision detection algorithm; the
-  //   // default FCL will not be available anymore. Having one exclusive collision detection algorithm helps performance
-  //   // a bit and is much more common.
-  //   g_planning_scene->setActiveCollisionDetector(collision_detection::CollisionDetectorAllocatorBullet::create(),
-  //                                                true /* exclusive */);
-  //   // For understanding the interactive interactive_robot, please refer to the Visualizing Collisions tutorial.
-  //   // CALL_SUB_TUTORIAL CCD
-  //   // CALL_SUB_TUTORIAL CCD_2
-  //   // END_TUTORIAL
+  for (auto& s : states){
 
-  //   // Eigen::Isometry3d world_cube_pose;
-  //   // double world_cube_size;
-  //   // interactive_robot.getWorldGeometry(world_cube_pose, world_cube_size);
-  //   // g_world_cube_shape = std::make_shared<shapes::Box>(world_cube_size, world_cube_size, world_cube_size);
-  //   // g_planning_scene->getWorldNonConst()->addToObject("world_cube", g_world_cube_shape, world_cube_pose);
+    computeCollisionContactPoints(planning_scene, s);
+    visual_tools.publishRobotState(s);
+    visual_tools.prompt(
+        "Press 'next' for next pose");
+  }
 
-  //   // Create a marker array publisher for publishing contact points
-  //   g_marker_array_publisher = std::make_unique<ros::Publisher>(
-  //       node_handle.advertise<visualization_msgs::MarkerArray>("interactive_robot_marray", 100));
+  visual_tools.prompt(
+      "Press 'next' in the RvizVisualToolsGui window to start the continuous collision detection demo.");
+  ROS_INFO("Shutting down the interactive interactive_robot...");
 
-  //   interactive_robot.setUserCallback(computeCollisionContactPoints);
+    // remove all collision markers
+  if (!g_collision_points.markers.empty())
+  {
+    for (auto &marker : g_collision_points.markers)
+      marker.action = visualization_msgs::Marker::DELETE;
 
-  //   visual_tools.loadRemoteControl();
-  //   visual_tools.prompt(
-  //       "Press 'next' in the RvizVisualToolsGui window to start the continuous collision detection demo.");
-  //   ROS_INFO("Shutting down the interactive interactive_robot...");
+    g_marker_array_publisher->publish(g_collision_points);
+  }
 
-  //   // remove all collision markers
-  //   if (!g_collision_points.markers.empty())
-  //   {
-  //     for (auto &marker : g_collision_points.markers)
-  //       marker.action = visualization_msgs::Marker::DELETE;
-
-  //     g_marker_array_publisher->publish(g_collision_points);
-  //   }
-
-  //   visual_tools.deleteAllMarkers();
-  // }
-  // TODO: Remove Temp
+  visual_tools.deleteAllMarkers();
 }
