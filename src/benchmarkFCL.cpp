@@ -1,14 +1,7 @@
-#include <moveit/utils/robot_model_test_utils.h>
-#include <geometric_shapes/mesh_operations.h>
-#include <moveit_visual_tools/moveit_visual_tools.h>
-#include <moveit/planning_scene/planning_scene.h>
-#include <moveit/robot_state/conversions.h>
-
-#include <moveit/move_group_interface/move_group_interface.h>
-#include <moveit/planning_scene_interface/planning_scene_interface.h>
-#include <moveit/collision_detection_fcl/collision_detector_allocator_fcl.h>
 #include "benchmarkCommon.h"
 #include "scene/scene_manufacuting.h"
+#include <moveit/collision_detection_fcl/collision_detector_allocator_fcl.h>
+#define SAVE_RESULT
 
 inline void setToHome(moveit::core::RobotState &panda_state)
 {
@@ -53,6 +46,11 @@ int main(int argc, char **argv)
         std::cout << "Shape " << shape->type << std::endl;
         shape->print(std::cout);
     }
+
+#if defined(SAVE_RESULT)
+    std::vector<int> results(states.size());
+    std::vector<int> resultsTraj(statePairs.size());
+#endif
     // Start Collision Detection
     collision_detection::CollisionRequest req;
     req.group_name = "arm";
@@ -62,9 +60,22 @@ int main(int argc, char **argv)
     for (auto &state : states)
     {
         cenv_->checkRobotCollision(req, res, state);
+#if defined(SAVE_RESULT)
+        results.push_back(res.collision);
+#endif
     }
 
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> elapsed = end - start;
     std::cout << "Time for trajectory collision detection: " << elapsed.count() << " ms" << std::endl;
+
+#if defined(SAVE_RESULT)
+    std::ofstream file(ros::package::getPath("rtcc_benchmark") + "/result/fcl_static_results.txt");
+    for (auto &result : results)
+    {
+        file << result << std::endl;
+    }
+    file.close();
+    std::cout << "Result Saved" << std::endl;
+#endif
 }

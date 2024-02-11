@@ -1,7 +1,7 @@
 #include "benchmarkCommon.h"
 #include "scene/scene_manufacuting.h"
-#include <moveit/collision_detection_bullet/collision_env_bullet.h>
 #include <moveit/collision_detection_bullet/collision_detector_allocator_bullet.h>
+#define SAVE_RESULT
 
 int main(int argc, char **argv)
 {
@@ -29,6 +29,11 @@ int main(int argc, char **argv)
     std::cout << "Shape " << shape->type << std::endl;
     shape->print(std::cout);
   }
+
+#if defined(SAVE_RESULT)
+    std::vector<int> results(states.size());
+    std::vector<int> resultsTraj(statePairs.size());
+#endif
   // Start Collision Detection
   collision_detection::CollisionRequest req;
   req.group_name = "arm";
@@ -38,12 +43,24 @@ int main(int argc, char **argv)
   for (auto &state : states)
   {
     cenv_->checkRobotCollision(req, res, state);
+#if defined(SAVE_RESULT)
+    results.push_back(res.collision);
+#endif
   }
 
   auto end = std::chrono::high_resolution_clock::now();
   std::chrono::duration<double, std::milli> elapsed = end - start;
   std::cout << "Time for trajectory collision detection: " << elapsed.count() << " ms" << std::endl;
 
+#if defined(SAVE_RESULT)
+    std::ofstream file(ros::package::getPath("rtcc_benchmark") + "/result/fcl_static_results.txt");
+    for (auto &result : results)
+    {
+        file << result << std::endl;
+    }
+    file.close();
+    std::cout << "Result Saved" << std::endl;
+#endif
   // Start Trajectory Collision Detection
   start = std::chrono::high_resolution_clock::now();
   for (auto &statePair : statePairs)
