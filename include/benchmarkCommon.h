@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <fstream> 
 #include <vector>
 #include <chrono>
 #include <ros/package.h>
