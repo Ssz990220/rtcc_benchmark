@@ -43,6 +43,11 @@ target_link_libraries(bullet_benchmark_viz_node
   ${catkin_LIBRARIES}
 )
 
+add_executable(bullet_benchmark_viz_panda src/benchmarkBulletVizPanda.cpp src/imarker.cpp src/interactive_robot.cpp src/pose_string.cpp)
+target_link_libraries(bullet_benchmark_viz_panda
+  ${catkin_LIBRARIES}
+)
+
 add_executable(fcl_benchmark_node src/benchmarkFCL.cpp)
 target_link_libraries(fcl_benchmark_node
   ${catkin_LIBRARIES}
@@ -53,11 +58,21 @@ target_link_libraries(bullet_benchmark_node
   ${catkin_LIBRARIES}
 )
 
+add_executable(fcl_benchmark_viz_node src/benchmarkFCLViz.cpp src/imarker.cpp src/interactive_robot.cpp src/pose_string.cpp)
+target_link_libraries(fcl_benchmark_viz_node
+  ${catkin_LIBRARIES}
+)
+
+add_executable(fcl_benchmark_viz_panda src/benchmarkFCLVizPanda.cpp src/imarker.cpp src/interactive_robot.cpp src/pose_string.cpp)
+target_link_libraries(fcl_benchmark_viz_panda
+  ${catkin_LIBRARIES}
+)
 
 install(TARGETS 
   bullet_benchmark_viz_node
   bullet_benchmark_node
   fcl_benchmark_node
+  fcl_benchmark_viz_node
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
 install(DIRECTORY launch DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
