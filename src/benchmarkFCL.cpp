@@ -1,4 +1,5 @@
 #include "benchmarkCommon.h"
+#include "robot/jaka.h"
 #include "scene/scene_manufacuting.h"
 #include <moveit/collision_detection_fcl/collision_detector_allocator_fcl.h>
 #define SAVE_RESULT
@@ -25,24 +26,24 @@ int main(int argc, char **argv)
     std::shared_ptr<collision_detection::CollisionDetectorAllocatorFCL> value_ = std::make_shared<collision_detection::CollisionDetectorAllocatorFCL>();
     robot_model_loader::RobotModelLoader rm_loader_("robot_description");
     robot_model::RobotModelPtr robot_model = rm_loader_.getModel();
-    collision_detection::CollisionEnvPtr cenv_ = value_->allocateEnv(robot_model);
-    moveit::core::RobotStatePtr robot_state_ = std::make_shared<moveit::core::RobotState>(robot_model);
+    auto planning_scene = std::make_shared<planning_scene::PlanningScene>(robot_model);
+    moveit::core::RobotState robot_state_ = planning_scene->getCurrentStateNonConst();
     // setToHome(*robot_state_);
 
-    setCollisionScene(cenv_);
+    setCollisionScene(planning_scene);
 
     std::vector<moveit::core::RobotState> states;
     std::vector<std::pair<moveit::core::RobotState, moveit::core::RobotState>> statePairs;
 
-    loadPoses(states, statePairs, *robot_state_);
+    BenchmarkRobot::loadPoses(states, statePairs, robot_state_);
     std::cout << "Load " << states.size() << " poses from file" << std::endl;
 
-    std::cout << "Found " << cenv_->getWorld()->getObjectIds().size() << " objects in the planning scene" << std::endl;
-    auto world = cenv_->getWorld()->getObjectIds();
+    std::cout << "Found " << planning_scene->getWorld()->getObjectIds().size() << " objects in the planning scene" << std::endl;
+    auto world = planning_scene->getWorld()->getObjectIds();
     for (auto it = world.begin(); it != world.end(); it++)
     {
         std::cout << "Object " << *it << std::endl;
-        auto shape = cenv_->getWorld()->getObject(*it)->shapes_.front();
+        auto shape = planning_scene->getWorld()->getObject(*it)->shapes_.front();
         std::cout << "Shape " << shape->type << std::endl;
         shape->print(std::cout);
     }
@@ -59,9 +60,9 @@ int main(int argc, char **argv)
     auto start = std::chrono::high_resolution_clock::now();
     for (auto &state : states)
     {
-        cenv_->checkRobotCollision(req, res, state);
+        planning_scene->checkCollision(req, res, state);
 #if defined(SAVE_RESULT)
-        results.push_back(res.collision);
+        results.push_back((int)res.collision);
 #endif
     }
 
