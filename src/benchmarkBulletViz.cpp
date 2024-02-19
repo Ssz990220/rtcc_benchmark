@@ -13,15 +13,6 @@
 #include "scene/scene_manufacuting.h"
 // auto g_planning_scene = std::unique_ptr<planning_scene::PlanningScene>();
 
-// Temp
-auto g_marker_array_publisher = std::unique_ptr<ros::Publisher>();
-auto g_col_marker_publisher = std::unique_ptr<ros::Publisher>();
-shapes::ShapePtr g_world_cube_shape;
-visualization_msgs::MarkerArray g_collision_points;
-visualization_msgs::MarkerArray g_collision_objs;
-static int colObjCount = 0;
-const double BOX_SIZE = 0.1;
-
 
 int main(int argc, char **argv)
 {
@@ -30,6 +21,15 @@ int main(int argc, char **argv)
 
   ros::AsyncSpinner spinner(1);
   spinner.start();
+
+
+  auto g_marker_array_publisher = std::unique_ptr<ros::Publisher>();
+  auto g_col_marker_publisher = std::unique_ptr<ros::Publisher>();
+  shapes::ShapePtr g_world_cube_shape;
+  visualization_msgs::MarkerArray g_collision_points;
+  visualization_msgs::MarkerArray g_collision_objs;
+  static int colObjCount = 0;
+  const double BOX_SIZE = 0.1;
 
   robot_model_loader::RobotModelLoader rm_loader_("robot_description");
 
@@ -131,6 +131,25 @@ int main(int argc, char **argv)
 
   g_marker_array_publisher = std::make_unique<ros::Publisher>(
       node_handle.advertise<visualization_msgs::MarkerArray>("interactive_robot_marray", 100));
+
+  
+  visual_tools.prompt(
+      "Press 'next' in the RvizVisualToolsGui window to start the interactive robot collision detection demo.");
+
+  // Lambda function capturing the necessary variables by reference
+  auto colFuncHandle = [&planning_scene, &g_marker_array_publisher, &g_collision_points](InteractiveRobot& robot) {
+      // Use the known parameters here directly
+      computeCollisionContactPoints(planning_scene, *robot.robotState(), g_marker_array_publisher, g_collision_points);
+  };
+
+  {
+    InteractiveRobot interactive_robot("robot_description", "benchmarkBulletViz/interactive_robot_state");
+    interactive_robot.setUserCallback(colFuncHandle);
+    visual_tools.loadRemoteControl();
+
+    visual_tools.prompt(
+        "Press 'next' in the RvizVisualToolsGui window to start the visualization of static poses CC result.");  
+  }
 
   for (auto& s : states){
 
