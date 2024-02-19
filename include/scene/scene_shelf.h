@@ -82,7 +82,7 @@ void setCollisionScene(std::shared_ptr<planning_scene::PlanningScene> planning_s
 
         // Set the translation part
         // meshPose.translation() << 0, -0.6, 0;
-        meshPose.translation() << 0, -0.4, 0;
+        meshPose.translation() << 0, -0.6, 0;
 
         add_mesh(planning_scene, meshPath, "bin1", meshPose, g_collision_objs);
     }
@@ -93,7 +93,7 @@ void setCollisionScene(std::shared_ptr<planning_scene::PlanningScene> planning_s
 
         // Set the translation part
         // meshPose.translation() << 0, 0.6, 0;
-        meshPose.translation() << 0, 0.4, 0;
+        meshPose.translation() << 0, 0.6, 0;
 
         add_mesh(planning_scene, meshPath, "bin2", meshPose, g_collision_objs);
     }

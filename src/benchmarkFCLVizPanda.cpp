@@ -100,25 +100,63 @@ int main(int argc, char **argv)
       "Press 'next' in the RvizVisualToolsGui window to start the benchmark on trajectory validation...");
   ROS_INFO_STREAM("Loaded " << statePairs.size() << " Trajs from file");
 
-  // Time the continuous collision detection
-  c_req.clear();
-  c_req.resize(statePairs.size());
-  for (int i = 0; i < statePairs.size(); ++i){
-    c_req[i].contacts = true;
-    c_req[i].max_contacts = 100;
-    c_req[i].max_contacts_per_pair = 5;
-    c_req[i].verbose = false;
-  }
-  c_res.clear();
-  c_res.resize(statePairs.size());
-  start = std::chrono::high_resolution_clock::now();
-  for (int i = 0; i < statePairs.size(); i++)
+  std::string path = ros::package::getPath("rtcc_benchmark");
+  std::string dataDir = path + "/data/poses/panda/";
   {
-    planning_scene->getCollisionEnv()->checkRobotCollision(c_req[i], c_res[i], statePairs[i].first, statePairs[i].second);
+    std::string disTraj4 = dataDir + "pandasDisTraj4.bin";
+
+    loadStatesFromFile<DOF>(disTraj4, states, jointNames, state);
+
+    std::cout << "Loaded " << states.size() << " states from file" << std::endl;
+    c_req.resize(states.size());
+    c_res.resize(states.size());
+
+    start = std::chrono::high_resolution_clock::now();
+    for (int i = 0; i < states.size(); i++)
+    {
+      planning_scene->checkCollision(c_req[i], c_res[i], states[i]);
+    }
+    end = std::chrono::high_resolution_clock::now();
+    elapsed = end - start;
+    std::cout << "Time for trajectory collision detection -- 4 discretized poses: " << elapsed.count() << " ms" << std::endl;
   }
-  end = std::chrono::high_resolution_clock::now();
-  elapsed = end - start;
-  std::cout << "Time for trajectory collision detection: " << elapsed.count() << " ms" << std::endl;
+  {
+    std::string disTraj8 = dataDir + "pandasDisTraj8.bin";
+
+    loadStatesFromFile<DOF>(disTraj8, states, jointNames, state);
+
+    std::cout << "Loaded " << states.size() << " states from file" << std::endl;
+    c_req.resize(states.size());
+    c_res.resize(states.size());
+
+    start = std::chrono::high_resolution_clock::now();
+    for (int i = 0; i < states.size(); i++)
+    {
+      planning_scene->checkCollision(c_req[i], c_res[i], states[i]);
+    }
+    end = std::chrono::high_resolution_clock::now();
+    elapsed = end - start;
+    std::cout << "Time for trajectory collision detection -- 8 discretized poses: " << elapsed.count() << " ms" << std::endl;
+  }
+
+  {
+    std::string disTraj16 = dataDir + "pandasDisTraj16.bin";
+
+    loadStatesFromFile<DOF>(disTraj16, states, jointNames, state);
+
+    std::cout << "Loaded " << states.size() << " states from file" << std::endl;
+    c_req.resize(states.size());
+    c_res.resize(states.size());
+
+    start = std::chrono::high_resolution_clock::now();
+    for (int i = 0; i < states.size(); i++)
+    {
+      planning_scene->checkCollision(c_req[i], c_res[i], states[i]);
+    }
+    end = std::chrono::high_resolution_clock::now();
+    elapsed = end - start;
+    std::cout << "Time for trajectory collision detection -- 16 discretized poses: " << elapsed.count() << " ms" << std::endl;
+  }
 
   moveit_msgs::DisplayRobotState msg;
   robot_state::robotStateToRobotStateMsg(state, msg.state);
