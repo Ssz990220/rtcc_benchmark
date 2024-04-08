@@ -74,7 +74,7 @@ void setCollisionScene(std::shared_ptr<planning_scene::PlanningScene> planning_s
 //   Yeah:
 //     pose: [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0]
 //     file_path: "scene/Yeah.obj"
-void setCollisionScene(std::shared_ptr<planning_scene::PlanningScene> planning_scene, visualization_msgs::MarkerArray &g_collision_objs, std::unique_ptr<ros::Publisher>& g_col_marker_publisher)
+void setCollisionScene(std::shared_ptr<planning_scene::PlanningScene> planning_scene, visualization_msgs::MarkerArray &g_collision_objs, std::unique_ptr<ros::Publisher> &g_col_marker_publisher)
 {
     {
         std::string meshPath = "file://" + ros::package::getPath("rtcc_benchmark") + "/data/assets/bin/bin.obj";
@@ -149,21 +149,21 @@ void setCollisionScene(std::shared_ptr<planning_scene::PlanningScene> planning_s
         add_mesh(planning_scene, meshPath, "Cow", meshPose, g_collision_objs);
     }
 
-    {
-        std::string meshPath = "file://" + ros::package::getPath("rtcc_benchmark") + "/data/assets/City.obj";
-        Eigen::Isometry3d meshPose = Eigen::Isometry3d::Identity();
-        meshPose.translation() << -0.4, 0, 0;
+    // {
+    //     std::string meshPath = "file://" + ros::package::getPath("rtcc_benchmark") + "/data/assets/City.obj";
+    //     Eigen::Isometry3d meshPose = Eigen::Isometry3d::Identity();
+    //     meshPose.translation() << -0.4, 0, 0;
 
-        add_mesh(planning_scene, meshPath, "City", meshPose, g_collision_objs);
-    }
+    //     add_mesh(planning_scene, meshPath, "City", meshPose, g_collision_objs);
+    // }
 
-    {
-        std::string meshPath = "file://" + ros::package::getPath("rtcc_benchmark") + "/data/assets/Bridge.obj";
-        Eigen::Isometry3d meshPose = Eigen::Isometry3d::Identity();
-        meshPose.translation() << -0.4, 0, 0;
+    // {
+    //     std::string meshPath = "file://" + ros::package::getPath("rtcc_benchmark") + "/data/assets/Bridge.obj";
+    //     Eigen::Isometry3d meshPose = Eigen::Isometry3d::Identity();
+    //     meshPose.translation() << -0.4, 0, 0;
 
-        add_mesh(planning_scene, meshPath, "Bridge", meshPose, g_collision_objs);
-    }
+    //     add_mesh(planning_scene, meshPath, "Bridge", meshPose, g_collision_objs);
+    // }
 
     {
         std::string meshPath = "file://" + ros::package::getPath("rtcc_benchmark") + "/data/assets/Fish.obj";
@@ -181,13 +181,13 @@ void setCollisionScene(std::shared_ptr<planning_scene::PlanningScene> planning_s
         add_mesh(planning_scene, meshPath, "Sheep", meshPose, g_collision_objs);
     }
 
-    {
-        std::string meshPath = "file://" + ros::package::getPath("rtcc_benchmark") + "/data/assets/Rose.obj";
-        Eigen::Isometry3d meshPose = Eigen::Isometry3d::Identity();
-        meshPose.translation() << -0.4, 0, 0;
+    // {
+    //     std::string meshPath = "file://" + ros::package::getPath("rtcc_benchmark") + "/data/assets/Rose.obj";
+    //     Eigen::Isometry3d meshPose = Eigen::Isometry3d::Identity();
+    //     meshPose.translation() << -0.4, 0, 0;
 
-        add_mesh(planning_scene, meshPath, "Rose", meshPose, g_collision_objs);
-    }
+    //     add_mesh(planning_scene, meshPath, "Rose", meshPose, g_collision_objs);
+    // }
 
     {
         std::string meshPath = "file://" + ros::package::getPath("rtcc_benchmark") + "/data/assets/Snakeboard.obj";
@@ -197,13 +197,13 @@ void setCollisionScene(std::shared_ptr<planning_scene::PlanningScene> planning_s
         add_mesh(planning_scene, meshPath, "Board", meshPose, g_collision_objs);
     }
 
-    {
-        std::string meshPath = "file://" + ros::package::getPath("rtcc_benchmark") + "/data/assets/Yeah.obj";
-        Eigen::Isometry3d meshPose = Eigen::Isometry3d::Identity();
-        meshPose.translation() << -0.4, 0, 0;
+    // {
+    //     std::string meshPath = "file://" + ros::package::getPath("rtcc_benchmark") + "/data/assets/Yeah.obj";
+    //     Eigen::Isometry3d meshPose = Eigen::Isometry3d::Identity();
+    //     meshPose.translation() << -0.4, 0, 0;
 
-        add_mesh(planning_scene, meshPath, "Yeah", meshPose, g_collision_objs);
-    }
+    //     add_mesh(planning_scene, meshPath, "Yeah", meshPose, g_collision_objs);
+    // }
 
     g_col_marker_publisher->publish(g_collision_objs);
 }
