@@ -3,6 +3,7 @@
 #include <moveit/collision_detection_fcl/collision_detector_allocator_fcl.h>
 #include <moveit/robot_state/conversions.h>
 #include <geometric_shapes/mesh_operations.h>
+#include <fstream>
 
 #include <moveit/move_group_interface/move_group_interface.h>
 #include <moveit/planning_scene_interface/planning_scene_interface.h>
@@ -21,7 +22,6 @@ visualization_msgs::MarkerArray g_collision_points;
 visualization_msgs::MarkerArray g_collision_objs;
 static int colObjCount = 0;
 const double BOX_SIZE = 0.1;
-
 
 int main(int argc, char **argv)
 {
@@ -72,16 +72,17 @@ int main(int argc, char **argv)
   std::vector<collision_detection::CollisionResult> c_res(states.size());
   std::vector<int> result(states.size());
   auto start = std::chrono::high_resolution_clock::now();
-//   for (auto const &state : states)
+  //   for (auto const &state : states)
   for (int i = 0; i < states.size(); ++i)
   {
     // computeCollisionContactPoints(planning_scene, states[i]);
     // visual_tools.publishRobotState(states[i]);
     planning_scene->checkCollision(c_req[i], c_res[i], states[i]);
     // visual_tools.publishRobotState(states[i]);
-    if (c_res[i].collision){
-        // std::cout << "In Collision" << std::endl;
-        result[i] = 1;
+    if (c_res[i].collision)
+    {
+      // std::cout << "In Collision" << std::endl;
+      result[i] = 1;
     }
     // visual_tools.prompt(
     //     "Press 'next' for next pose");
@@ -90,79 +91,89 @@ int main(int argc, char **argv)
   auto end = std::chrono::high_resolution_clock::now();
   std::chrono::duration<double, std::milli> elapsed = end - start;
   std::cout << "Time for static poses collision detection: " << elapsed.count() << " ms" << std::endl;
-// Print the first 10 elemtns in result
-    for (int i = 0; i < 100; ++i){
-        std::cout << result[i] << " ";
-    }
-    std::cout << std::endl;
+  // Print the first 10 elemtns in result
+  for (int i = 0; i < 100; ++i)
+  {
+    std::cout << result[i] << " ";
+  }
+  std::cout << std::endl;
+
+  // save the result to a bin file.
+  std::string path = ros::package::getPath("rtcc_benchmark");
+  std::string dataDir = path + "/data/poses/panda/";
+  std::string resultFile = dataDir + "pandasStaticCollisionResult.bin";
+  std::ofstream out(resultFile, std::ios::binary);
+  out.write((char *)&result[0], result.size() * sizeof(int));
+  out.close();
 
   visual_tools.prompt(
       "Press 'next' in the RvizVisualToolsGui window to start the benchmark on trajectory validation...");
   ROS_INFO_STREAM("Loaded " << statePairs.size() << " Trajs from file");
 
-  std::string path = ros::package::getPath("rtcc_benchmark");
-  std::string dataDir = path + "/data/poses/panda/";
-  {
-    std::string disTraj4 = dataDir + "pandasDisTraj4.bin";
+  // std::string path = ros::package::getPath("rtcc_benchmark");
+  // std::string dataDir = path + "/data/poses/panda/";
+  // {
+  //   std::string disTraj4 = dataDir + "pandasDisTraj4.bin";
 
-    loadStatesFromFile<DOF>(disTraj4, states, jointNames, state);
+  //   loadStatesFromFile<DOF>(disTraj4, states, jointNames, state);
 
-    std::cout << "Loaded " << states.size() << " states from file" << std::endl;
-    c_req.resize(states.size());
-    c_res.resize(states.size());
+  //   std::cout << "Loaded " << states.size() << " states from file" << std::endl;
+  //   c_req.resize(states.size());
+  //   c_res.resize(states.size());
 
-    start = std::chrono::high_resolution_clock::now();
-    for (int i = 0; i < states.size(); i++)
-    {
-      planning_scene->checkCollision(c_req[i], c_res[i], states[i]);
-    }
-    end = std::chrono::high_resolution_clock::now();
-    elapsed = end - start;
-    std::cout << "Time for trajectory collision detection -- 4 discretized poses: " << elapsed.count() << " ms" << std::endl;
-  }
-  {
-    std::string disTraj8 = dataDir + "pandasDisTraj8.bin";
+  //   start = std::chrono::high_resolution_clock::now();
+  //   for (int i = 0; i < states.size(); i++)
+  //   {
+  //     planning_scene->checkCollision(c_req[i], c_res[i], states[i]);
+  //   }
+  //   end = std::chrono::high_resolution_clock::now();
+  //   elapsed = end - start;
+  //   std::cout << "Time for trajectory collision detection -- 4 discretized poses: " << elapsed.count() << " ms" << std::endl;
+  // }
+  // {
+  //   std::string disTraj8 = dataDir + "pandasDisTraj8.bin";
 
-    loadStatesFromFile<DOF>(disTraj8, states, jointNames, state);
+  //   loadStatesFromFile<DOF>(disTraj8, states, jointNames, state);
 
-    std::cout << "Loaded " << states.size() << " states from file" << std::endl;
-    c_req.resize(states.size());
-    c_res.resize(states.size());
+  //   std::cout << "Loaded " << states.size() << " states from file" << std::endl;
+  //   c_req.resize(states.size());
+  //   c_res.resize(states.size());
 
-    start = std::chrono::high_resolution_clock::now();
-    for (int i = 0; i < states.size(); i++)
-    {
-      planning_scene->checkCollision(c_req[i], c_res[i], states[i]);
-    }
-    end = std::chrono::high_resolution_clock::now();
-    elapsed = end - start;
-    std::cout << "Time for trajectory collision detection -- 8 discretized poses: " << elapsed.count() << " ms" << std::endl;
-  }
+  //   start = std::chrono::high_resolution_clock::now();
+  //   for (int i = 0; i < states.size(); i++)
+  //   {
+  //     planning_scene->checkCollision(c_req[i], c_res[i], states[i]);
+  //   }
+  //   end = std::chrono::high_resolution_clock::now();
+  //   elapsed = end - start;
+  //   std::cout << "Time for trajectory collision detection -- 8 discretized poses: " << elapsed.count() << " ms" << std::endl;
+  // }
 
-  {
-    std::string disTraj16 = dataDir + "pandasDisTraj16.bin";
+  // {
+  //   std::string disTraj16 = dataDir + "pandasDisTraj16.bin";
 
-    loadStatesFromFile<DOF>(disTraj16, states, jointNames, state);
+  //   loadStatesFromFile<DOF>(disTraj16, states, jointNames, state);
 
-    std::cout << "Loaded " << states.size() << " states from file" << std::endl;
-    c_req.resize(states.size());
-    c_res.resize(states.size());
+  //   std::cout << "Loaded " << states.size() << " states from file" << std::endl;
+  //   c_req.resize(states.size());
+  //   c_res.resize(states.size());
 
-    start = std::chrono::high_resolution_clock::now();
-    for (int i = 0; i < states.size(); i++)
-    {
-      planning_scene->checkCollision(c_req[i], c_res[i], states[i]);
-    }
-    end = std::chrono::high_resolution_clock::now();
-    elapsed = end - start;
-    std::cout << "Time for trajectory collision detection -- 16 discretized poses: " << elapsed.count() << " ms" << std::endl;
-  }
+  //   start = std::chrono::high_resolution_clock::now();
+  //   for (int i = 0; i < states.size(); i++)
+  //   {
+  //     planning_scene->checkCollision(c_req[i], c_res[i], states[i]);
+  //   }
+  //   end = std::chrono::high_resolution_clock::now();
+  //   elapsed = end - start;
+  //   std::cout << "Time for trajectory collision detection -- 16 discretized poses: " << elapsed.count() << " ms" << std::endl;
+  // }
 
   moveit_msgs::DisplayRobotState msg;
   robot_state::robotStateToRobotStateMsg(state, msg.state);
   visual_tools.publishRobotState(state);
 
-  for (auto& s : states){
+  for (auto &s : states)
+  {
 
     computeCollisionContactPoints(planning_scene, s, g_marker_array_publisher, g_collision_points);
     visual_tools.publishRobotState(s);
@@ -174,7 +185,7 @@ int main(int argc, char **argv)
       "Press 'next' in the RvizVisualToolsGui window to start the continuous collision detection demo.");
   ROS_INFO("Shutting down the interactive interactive_robot...");
 
-    // remove all collision markers
+  // remove all collision markers
   if (!g_collision_points.markers.empty())
   {
     for (auto &marker : g_collision_points.markers)
