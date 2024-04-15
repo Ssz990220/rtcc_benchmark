@@ -21,7 +21,6 @@ visualization_msgs::MarkerArray g_collision_objs;
 static int colObjCount = 0;
 const double BOX_SIZE = 0.1;
 
-
 int main(int argc, char **argv)
 {
   ros::init(argc, argv, "benchmarkBulletViz");
@@ -74,16 +73,17 @@ int main(int argc, char **argv)
   std::vector<collision_detection::CollisionResult> c_res(states.size());
   std::vector<int> result(states.size());
   auto start = std::chrono::high_resolution_clock::now();
-//   for (auto const &state : states)
+  //   for (auto const &state : states)
   for (int i = 0; i < states.size(); ++i)
   {
     // computeCollisionContactPoints(planning_scene, states[i]);
     // visual_tools.publishRobotState(states[i]);
     planning_scene->checkCollision(c_req[i], c_res[i], states[i]);
     // visual_tools.publishRobotState(states[i]);
-    if (c_res[i].collision){
-        // std::cout << "In Collision" << std::endl;
-        result[i] = 1;
+    if (c_res[i].collision)
+    {
+      // std::cout << "In Collision" << std::endl;
+      result[i] = 1;
     }
     // visual_tools.prompt(
     //     "Press 'next' for next pose");
@@ -93,8 +93,9 @@ int main(int argc, char **argv)
   std::chrono::duration<double, std::milli> elapsed = end - start;
   std::cout << "Time for static poses collision detection: " << elapsed.count() << " ms" << std::endl;
   // Print the first 10 elemtns in result
-  for (int i = 0; i < 100; ++i){
-      std::cout << result[i] << " ";
+  for (int i = 0; i < 100; ++i)
+  {
+    std::cout << result[i] << " ";
   }
   std::cout << std::endl;
 
@@ -125,7 +126,8 @@ int main(int argc, char **argv)
   g_marker_array_publisher = std::make_unique<ros::Publisher>(
       node_handle.advertise<visualization_msgs::MarkerArray>("interactive_robot_marray", 100));
 
-  for (auto& s : states){
+  for (auto &s : states)
+  {
 
     computeCollisionContactPoints(planning_scene, s, g_marker_array_publisher, g_collision_points);
     visual_tools.publishRobotState(s);
@@ -137,7 +139,7 @@ int main(int argc, char **argv)
       "Press 'next' in the RvizVisualToolsGui window to start the continuous collision detection demo.");
   ROS_INFO("Shutting down the interactive interactive_robot...");
 
-    // remove all collision markers
+  // remove all collision markers
   if (!g_collision_points.markers.empty())
   {
     for (auto &marker : g_collision_points.markers)
