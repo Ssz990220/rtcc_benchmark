@@ -5,12 +5,11 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /RobotState1
-        - /RobotState1/Links1/jaka_link_01
         - /InteractiveMarkers1
         - /MarkerArray2
         - /Marker2
       Splitter Ratio: 0.5
-    Tree Height: 1076
+    Tree Height: 737
   - Class: rviz/Help
     Name: Help
   - Class: rviz/Views
@@ -58,7 +57,7 @@ Visualization Manager:
       Marker Topic: interactive_robot_marray
       Name: MarkerArray
       Namespaces:
-        {}
+        shelf=panda_link5: true
       Queue Size: 100
       Value: true
     - Attached Body Color: 150; 50; 150
@@ -75,37 +74,38 @@ Visualization Manager:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-        jaka_link_0:
+          Value: true
+        panda_link1:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        jaka_link_1:
+        panda_link2:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        jaka_link_2:
+        panda_link3:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        jaka_link_3:
+        panda_link4:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        jaka_link_4:
+        panda_link5:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        jaka_link_5:
+        panda_link6:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        jaka_link_6:
+        panda_link7:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -113,11 +113,11 @@ Visualization Manager:
       Name: RobotState
       Robot Alpha: 1
       Robot Description: robot_description
-      Robot State Topic: /benchmarkBulletViz/interactive_robot_state
+      Robot State Topic: /benchmarkFCLViz/interactive_robot_state
       Show All Links: true
       Show Highlights: true
       Value: true
-      Visual Enabled: true
+      Visual Enabled: false
     - Class: rviz/InteractiveMarkers
       Enable Transparency: true
       Enabled: true
@@ -132,13 +132,17 @@ Visualization Manager:
       Marker Topic: col_scene_marray
       Name: MarkerArray
       Namespaces:
-        pipe: true
-        table1: true
-        table2: true
-        table3: true
-        table4: true
-        table6: true
-        table7: true
+        Board: true
+        Bob: true
+        Cow: true
+        Face1: true
+        Face2: true
+        Face3: true
+        Fish: true
+        Sheep: true
+        bin1: true
+        bin2: true
+        shelf: true
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -165,7 +169,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 7.8418097496032715
+      Distance: 1.0142359733581543
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -173,31 +177,31 @@ Visualization Manager:
         Value: false
       Field of View: 0.75
       Focal Point:
-        X: -0.10000000149011612
-        Y: 0.25
-        Z: 0.30000001192092896
+        X: 0.09307091683149338
+        Y: 0.29278016090393066
+        Z: 0.30779629945755005
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.38499999046325684
+      Pitch: 0.41999998688697815
       Target Frame: base
-      Yaw: 4.359944820404053
+      Yaw: 4.85492467880249
     Saved: ~
 Window Geometry:
   Displays:
     collapsed: false
-  Height: 1403
+  Height: 1043
   Help:
     collapsed: false
   Hide Left Dock: false
   Hide Right Dock: false
-  QMainWindow State: 000000ff00000000fd00000001000000000000033800000521fc0200000008fb000000100044006900730070006c006100790073010000003d000004c5000000c900fffffffb0000000800480065006c00700000000342000000bb0000006e00fffffffb0000000a00560069006500770073000000010c000000a4000000a400fffffffb0000000c00430061006d00650072006100000002ff000001610000000000000000fb0000001e004d006f00740069006f006e00200050006c0061006e006e0069006e00670100000374000001890000000000000000fb00000044004d006f00740069006f006e0050006c0061006e006e0069006e00670020002d0020005400720061006a006500630074006f0072007900200053006c00690064006500720000000000ffffffff0000000000000000fb0000001c004d006f00740069006f006e0050006c0061006e006e0069006e00670000000400000004130000000000000000fb00000024005200760069007a00560069007300750061006c0054006f006f006c00730047007500690100000508000000560000004100ffffff000006c20000052100000001000000020000000100000002fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd000000010000000000000338000003b9fc0200000008fb000000100044006900730070006c006100790073010000003d00000372000000c900fffffffb0000000800480065006c00700000000342000000bb0000006e00fffffffb0000000a00560069006500770073000000010c000000a4000000a400fffffffb0000000c00430061006d00650072006100000002ff000001610000000000000000fb0000001e004d006f00740069006f006e00200050006c0061006e006e0069006e00670100000374000001890000000000000000fb00000044004d006f00740069006f006e0050006c0061006e006e0069006e00670020002d0020005400720061006a006500630074006f0072007900200053006c00690064006500720000000000ffffffff0000000000000000fb0000001c004d006f00740069006f006e0050006c0061006e006e0069006e00670000000400000004130000000000000000fb00000024005200760069007a00560069007300750061006c0054006f006f006c007300470075006901000003b5000000410000004100ffffff00000442000003b900000001000000020000000100000002fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   RvizVisualToolsGui:
     collapsed: false
   Views:
     collapsed: false
-  Width: 2560
-  X: 3840
-  Y: 326
+  Width: 1920
+  X: 300
+  Y: 65
