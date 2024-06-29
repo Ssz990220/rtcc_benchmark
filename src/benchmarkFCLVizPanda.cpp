@@ -12,6 +12,7 @@
 #include "benchmarkCommon.h"
 #include "robot/panda.h"
 #include "scene/scene_shelf.h"
+// #include "scene/scene_dragon.h"
 // auto g_planning_scene = std::unique_ptr<planning_scene::PlanningScene>();
 
 // Temp
@@ -101,7 +102,7 @@ int main(int argc, char **argv)
   // save the result to a bin file.
   std::string path = ros::package::getPath("rtcc_benchmark");
   std::string dataDir = path + "/data/poses/panda/";
-  std::string resultFile = dataDir + "pandasStaticCollisionResult.bin";
+  std::string resultFile = dataDir + "Panda4096Result.bin";
   std::ofstream out(resultFile, std::ios::binary);
   out.write((char *)&result[0], result.size() * sizeof(int));
   out.close();
@@ -168,17 +169,39 @@ int main(int argc, char **argv)
   //   std::cout << "Time for trajectory collision detection -- 16 discretized poses: " << elapsed.count() << " ms" << std::endl;
   // }
 
-  moveit_msgs::DisplayRobotState msg;
-  robot_state::robotStateToRobotStateMsg(state, msg.state);
-  visual_tools.publishRobotState(state);
+// Load RTCC Result to observe what's the error
+  std::string rtccResultFile = dataDir + "RTCC_Result.bin";
+  std::fstream file(rtccResultFile, std::ios::in | std::ios::binary);
+  std::vector<int> rtccResult;
 
-  for (auto &s : states)
+  if (!file.is_open()) {
+      std::cerr << "Failed to open file: " << rtccResultFile << std::endl;
+      exit(1);
+  } else {
+    while (true) {
+      int t;
+      file.read(reinterpret_cast<char*>(&t), sizeof(int));
+      if (file.eof()) {
+          break;
+      }
+      rtccResult.push_back(t);
+    }
+  }
+  file.close();
+
+  std::transform(rtccResult.begin(), rtccResult.end(), rtccResult.begin(), [](int i) { return i > 0 ? 1 : 0; });
+
+  // for (auto &s : states)
+  for (int i = 0; i < rtccResult.size(); i++)
   {
-
-    computeCollisionContactPoints(planning_scene, s, g_marker_array_publisher, g_collision_points);
-    visual_tools.publishRobotState(s);
-    visual_tools.prompt(
-        "Press 'next' for next pose");
+    if (rtccResult[i] != result[i]){
+      auto& s = states[i];
+      std::cout << "Poses " << i << " are different" << std::endl;
+      computeCollisionContactPoints(planning_scene, s, g_marker_array_publisher, g_collision_points);
+      visual_tools.publishRobotState(s);
+      visual_tools.prompt(
+          "Press 'next' for next pose");
+    }
   }
 
   visual_tools.prompt(
