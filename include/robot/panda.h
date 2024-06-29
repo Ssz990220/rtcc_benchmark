@@ -23,7 +23,7 @@ namespace BenchmarkRobot{
   {
       std::string path = ros::package::getPath("rtcc_benchmark");
       std::string dataDir = path + "/data/poses/panda/";
-      std::string posesFile = dataDir + "poses.bin";
+      std::string posesFile = dataDir + "Panda4096.bin";
       std::string trajFile = dataDir + "trajPoses.bin";
 
       loadStatesFromFile<DOF>(posesFile, states, jointNames, templateState);
