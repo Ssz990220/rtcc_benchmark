@@ -46,7 +46,7 @@ void add_mesh(std::shared_ptr<planning_scene::PlanningScene> &planning_scene, st
   g_mesh.scale.x = 1;
   g_mesh.scale.y = 1;
   g_mesh.scale.z = 1;
-  g_mesh.color.a = 0.8; // Don't forget to set the alpha!
+  g_mesh.color.a = 1.0; // Don't forget to set the alpha!
   g_mesh.color.r = 0.0;
   g_mesh.color.g = 1.0;
   g_mesh.color.b = 0.0;

@@ -34,7 +34,7 @@ namespace BenchmarkRobot{
     };
 
     template <int DOF>
-    void loadPosesFromFile(std::string& filePath, std::vector<std::array<double, DOF>> &poses, RobotState &templateState){
+    void loadPosesFromFile(std::string& filePath, std::vector<std::array<double, DOF>> &poses){
         std::ifstream file(filePath, std::ios::binary);
         if (file.is_open())
         {
@@ -61,7 +61,7 @@ namespace BenchmarkRobot{
     template <int DOF>
     void loadStatesFromFile(std::string& filePath, std::vector<RobotState> &states, std::array<const char*, DOF> jointNames, RobotState &templateState){
         std::vector<std::array<double, DOF>> poses;
-        loadPosesFromFile<DOF>(filePath, poses, templateState);
+        loadPosesFromFile<DOF>(filePath, poses);
         states.clear();
         states.reserve(poses.size()); // Reserve space to avoid reallocations
         poseToRobotState<DOF> transformer(jointNames, templateState);
@@ -71,7 +71,7 @@ namespace BenchmarkRobot{
     template <int DOF>
     void loadTrajFromFile(std::string& filePath, std::vector<std::pair<RobotState, RobotState>> &statePairs, std::array<const char*, DOF> jointNames, RobotState &templateState){
         std::vector<std::array<double, DOF>> poses;
-        loadPosesFromFile<DOF>(filePath, poses, templateState);
+        loadPosesFromFile<DOF>(filePath, poses);
 
         size_t trajSize = poses.size() / 2;
         statePairs.clear();

@@ -12,6 +12,7 @@
 #include "benchmarkCommon.h"
 #include "robot/panda.h"
 #include "scene/scene_shelf.h"
+#include "ArrayMath.h"
 // #include "scene/scene_dragon.h"
 // auto g_planning_scene = std::unique_ptr<planning_scene::PlanningScene>();
 
@@ -110,27 +111,81 @@ int main(int argc, char **argv)
   visual_tools.prompt(
       "Press 'next' in the RvizVisualToolsGui window to start the benchmark on trajectory validation...");
   ROS_INFO_STREAM("Loaded " << statePairs.size() << " Trajs from file");
+  
+  std::string start_end_file_path = dataDir + "traj_start_and_end.bin";
+  std::vector<std::array<double, DOF>> se_poses;
+  loadPosesFromFile<DOF>(start_end_file_path, se_poses);
+  std::cout << "Loaded " << se_poses.size()  / 2 << " trajs from file" << std::endl;
 
-  // std::string path = ros::package::getPath("rtcc_benchmark");
-  // std::string dataDir = path + "/data/poses/panda/";
-  // {
-  //   std::string disTraj4 = dataDir + "pandasDisTraj4.bin";
+  { // 64 interp
+    std::vector<std::array<double, DOF>> trajPoses(64 * 4096);
 
-  //   loadStatesFromFile<DOF>(disTraj4, states, jointNames, state);
+    std::array<double, DOF> start;
+    std::array<double, DOF> end;
+    std::array<double, DOF> span;
+    for (int i = 0; i < 4096; i++) {
+        start = se_poses[i * 2];
+        end  = se_poses[i * 2 + 1];
+        span = (end - start) / (double) (64 - 1);
+        for (int j = 0; j < 64; j++) {
+            trajPoses[i * 64 + j] = start + span * (double) j;
+        }
+    }
+    
+    std::vector<RobotState> states;
+    states.clear();
+    states.reserve(trajPoses.size()); // Reserve space to avoid reallocations
+    poseToRobotState<DOF> transformer(jointNames, state);
+    std::transform(trajPoses.begin(), trajPoses.end(), std::back_inserter(states), transformer);
 
-  //   std::cout << "Loaded " << states.size() << " states from file" << std::endl;
-  //   c_req.resize(states.size());
-  //   c_res.resize(states.size());
+    // std::string disTraj64 = dataDir + "traj_64.bin";
 
-  //   start = std::chrono::high_resolution_clock::now();
-  //   for (int i = 0; i < states.size(); i++)
-  //   {
-  //     planning_scene->checkCollision(c_req[i], c_res[i], states[i]);
-  //   }
-  //   end = std::chrono::high_resolution_clock::now();
-  //   elapsed = end - start;
-  //   std::cout << "Time for trajectory collision detection -- 4 discretized poses: " << elapsed.count() << " ms" << std::endl;
-  // }
+    // loadStatesFromFile<DOF>(disTraj64, states, jointNames, state);
+
+    uint nUsed = 64 * 4096;
+
+    std::vector<collision_detection::CollisionRequest> tc_req(nUsed);
+    std::vector<collision_detection::CollisionResult> tc_res(nUsed);
+    std::vector<int> trajResult(4096, 0);
+
+    for (int i = 0; i < nUsed; i++)
+    {
+      planning_scene->checkCollision(tc_req[i], tc_res[i], states[i]);
+      if (tc_res[i].collision)
+      {
+        // std::cout << "In Collision" << std::endl;
+        trajResult[i / 64] += 1;
+      }
+    }
+
+    // std::transform(trajResult.begin(), trajResult.end(), trajResult.begin(), [](int i) { return i > 0 ? 1 : 0; });
+
+    uint nValid = std::count(trajResult.begin(), trajResult.end(), 0);
+
+    std::cout << "Number of Valid Trajectories: " << nValid << std::endl;
+
+    // save the result to a bin file.
+    std::string trajResultFile = dataDir + "Panda4096TrajResult.bin";
+    std::ofstream out(trajResultFile, std::ios::binary);
+    out.write((char *)&trajResult[0], trajResult.size() * sizeof(int));
+
+    
+    // visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to show trajs...");
+    // for (int i = 0; i < 4096; i++) {
+    //   if (trajResult[i] != 0) {
+    //     std::cout << "Traj " << i << " is invalid" << std::endl;
+    //   } else {
+    //     std::cout << "Traj " << i << " is valid" << std::endl;
+    //   }
+    //   for (int j = 0; j < 64; j++) {
+    //     computeCollisionContactPoints(planning_scene, states[i * 64 + j], g_marker_array_publisher, g_collision_points);
+    //     visual_tools.publishRobotState(states[i * 64 + j]);
+    //     ros::Duration(0.03).sleep();
+    //   }
+    //   visual_tools.prompt("Press 'next' for next traj...");
+    // }
+  
+  }
   // {
   //   std::string disTraj8 = dataDir + "pandasDisTraj8.bin";
 
@@ -169,6 +224,9 @@ int main(int argc, char **argv)
   //   std::cout << "Time for trajectory collision detection -- 16 discretized poses: " << elapsed.count() << " ms" << std::endl;
   // }
 
+
+  visual_tools.prompt(
+      "Press 'next' in the RvizVisualToolsGui window to start the benchmark on trajectory validation...");
 // Load RTCC Result to observe what's the error
   std::string rtccResultFile = dataDir + "RTCC_Result.bin";
   std::fstream file(rtccResultFile, std::ios::in | std::ios::binary);
