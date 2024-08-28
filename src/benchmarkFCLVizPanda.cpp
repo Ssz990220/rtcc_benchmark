@@ -17,6 +17,8 @@
 // auto g_planning_scene = std::unique_ptr<planning_scene::PlanningScene>();
 
 // Temp
+std::string dataDir;
+std::string path;
 auto g_marker_array_publisher = std::unique_ptr<ros::Publisher>();
 auto g_col_marker_publisher = std::unique_ptr<ros::Publisher>();
 shapes::ShapePtr g_world_cube_shape;
@@ -24,6 +26,77 @@ visualization_msgs::MarkerArray g_collision_points;
 visualization_msgs::MarkerArray g_collision_objs;
 static int colObjCount = 0;
 const double BOX_SIZE = 0.1;
+
+void check_interp_traj(
+  const uint nTraj, 
+  const uint nInterp,
+  std::vector<std::array<double, DOF>>& se_poses, 
+  std::shared_ptr<planning_scene::PlanningScene> planning_scene, 
+  moveit::core::RobotState &state) {
+
+    // check if the result already exists
+    std::string trajResultFile = dataDir + "Panda" + std::to_string(nTraj) + "_" + std::to_string(nInterp) + "_TrajResult.bin";
+    std::ifstream in(trajResultFile, std::ios::binary);
+    if (in.is_open()) {
+        std::vector<int> trajResult(nTraj, 0);
+        in.read((char *)&trajResult[0], trajResult.size() * sizeof(int));
+        uint nValid = std::count(trajResult.begin(), trajResult.end(), 0);
+        std::cout << "Number of Valid Trajectories: " << nValid << std::endl;
+        return;
+    }
+
+
+    std::vector<std::array<double, DOF>> trajPoses(nInterp * nTraj);
+
+    std::array<double, DOF> start;
+    std::array<double, DOF> end;
+    std::array<double, DOF> span;
+    for (int i = 0; i < nTraj; i++) {
+        start = se_poses[i * 2];
+        end  = se_poses[i * 2 + 1];
+        span = (end - start) / (double) (nInterp - 1);
+        for (int j = 0; j < nInterp; j++) {
+            trajPoses[i * nInterp + j] = start + span * (double) j;
+        }
+    }
+    
+    std::vector<RobotState> states;
+    states.clear();
+    states.reserve(trajPoses.size()); // Reserve space to avoid reallocations
+    poseToRobotState<DOF> transformer(jointNames, state);
+    std::transform(trajPoses.begin(), trajPoses.end(), std::back_inserter(states), transformer);
+
+    // std::string disTraj64 = dataDir + "traj_64.bin";
+
+    // loadStatesFromFile<DOF>(disTraj64, states, jointNames, state);
+
+    uint nUsed = nInterp * nTraj;
+
+    std::vector<collision_detection::CollisionRequest> tc_req(nUsed);
+    std::vector<collision_detection::CollisionResult> tc_res(nUsed);
+    std::vector<int> trajResult(nTraj, 0);
+
+    for (int i = 0; i < nUsed; i++)
+    {
+      planning_scene->checkCollision(tc_req[i], tc_res[i], states[i]);
+      if (tc_res[i].collision)
+      {
+        // std::cout << "In Collision" << std::endl;
+        trajResult[i / nInterp] += 1;
+      }
+    }
+
+    // std::transform(trajResult.begin(), trajResult.end(), trajResult.begin(), [](int i) { return i > 0 ? 1 : 0; });
+
+    uint nValid = std::count(trajResult.begin(), trajResult.end(), 0);
+
+    std::cout << "Number of Valid Trajectories: " << nValid << std::endl;
+
+    // save the result to a bin file.
+    std::ofstream out(trajResultFile, std::ios::binary);
+    out.write((char *)&trajResult[0], trajResult.size() * sizeof(int));
+}
+
 
 int main(int argc, char **argv)
 {
@@ -101,8 +174,8 @@ int main(int argc, char **argv)
   std::cout << std::endl;
 
   // save the result to a bin file.
-  std::string path = ros::package::getPath("rtcc_benchmark");
-  std::string dataDir = path + "/data/poses/panda/";
+  path = ros::package::getPath("rtcc_benchmark");
+  dataDir = path + "/data/poses/panda/";
   std::string resultFile = dataDir + "Panda4096Result.bin";
   std::ofstream out(resultFile, std::ios::binary);
   out.write((char *)&result[0], result.size() * sizeof(int));
@@ -117,75 +190,15 @@ int main(int argc, char **argv)
   loadPosesFromFile<DOF>(start_end_file_path, se_poses);
   std::cout << "Loaded " << se_poses.size()  / 2 << " trajs from file" << std::endl;
 
-  { // 64 interp
-    std::vector<std::array<double, DOF>> trajPoses(64 * 4096);
+  check_interp_traj(4096, 2, se_poses, planning_scene, state);
+  check_interp_traj(4096, 4, se_poses, planning_scene, state);
+  check_interp_traj(4096, 8, se_poses, planning_scene, state);
+  check_interp_traj(4096, 16, se_poses, planning_scene, state);
+  check_interp_traj(4096, 32, se_poses, planning_scene, state);
+  check_interp_traj(4096, 64, se_poses, planning_scene, state);
+  check_interp_traj(4096, 128, se_poses, planning_scene, state);
+  check_interp_traj(4096, 256, se_poses, planning_scene, state);
 
-    std::array<double, DOF> start;
-    std::array<double, DOF> end;
-    std::array<double, DOF> span;
-    for (int i = 0; i < 4096; i++) {
-        start = se_poses[i * 2];
-        end  = se_poses[i * 2 + 1];
-        span = (end - start) / (double) (64 - 1);
-        for (int j = 0; j < 64; j++) {
-            trajPoses[i * 64 + j] = start + span * (double) j;
-        }
-    }
-    
-    std::vector<RobotState> states;
-    states.clear();
-    states.reserve(trajPoses.size()); // Reserve space to avoid reallocations
-    poseToRobotState<DOF> transformer(jointNames, state);
-    std::transform(trajPoses.begin(), trajPoses.end(), std::back_inserter(states), transformer);
-
-    // std::string disTraj64 = dataDir + "traj_64.bin";
-
-    // loadStatesFromFile<DOF>(disTraj64, states, jointNames, state);
-
-    uint nUsed = 64 * 4096;
-
-    std::vector<collision_detection::CollisionRequest> tc_req(nUsed);
-    std::vector<collision_detection::CollisionResult> tc_res(nUsed);
-    std::vector<int> trajResult(4096, 0);
-
-    for (int i = 0; i < nUsed; i++)
-    {
-      planning_scene->checkCollision(tc_req[i], tc_res[i], states[i]);
-      if (tc_res[i].collision)
-      {
-        // std::cout << "In Collision" << std::endl;
-        trajResult[i / 64] += 1;
-      }
-    }
-
-    // std::transform(trajResult.begin(), trajResult.end(), trajResult.begin(), [](int i) { return i > 0 ? 1 : 0; });
-
-    uint nValid = std::count(trajResult.begin(), trajResult.end(), 0);
-
-    std::cout << "Number of Valid Trajectories: " << nValid << std::endl;
-
-    // save the result to a bin file.
-    std::string trajResultFile = dataDir + "Panda4096TrajResult.bin";
-    std::ofstream out(trajResultFile, std::ios::binary);
-    out.write((char *)&trajResult[0], trajResult.size() * sizeof(int));
-
-    
-    // visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to show trajs...");
-    // for (int i = 0; i < 4096; i++) {
-    //   if (trajResult[i] != 0) {
-    //     std::cout << "Traj " << i << " is invalid" << std::endl;
-    //   } else {
-    //     std::cout << "Traj " << i << " is valid" << std::endl;
-    //   }
-    //   for (int j = 0; j < 64; j++) {
-    //     computeCollisionContactPoints(planning_scene, states[i * 64 + j], g_marker_array_publisher, g_collision_points);
-    //     visual_tools.publishRobotState(states[i * 64 + j]);
-    //     ros::Duration(0.03).sleep();
-    //   }
-    //   visual_tools.prompt("Press 'next' for next traj...");
-    // }
-  
-  }
   // {
   //   std::string disTraj8 = dataDir + "pandasDisTraj8.bin";
 
